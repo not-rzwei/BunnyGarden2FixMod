@@ -1,6 +1,7 @@
 # BunnyGarden2FixMod
 
 [バニーガーデン2](https://store.steampowered.com/app/3443820/2/)(海外名:Bunny Garden2)用の解像度修正やフレームレート上限変更などを行うBepInEx5用Modです。
+<img width="3839" height="2159" alt="image" src="https://github.com/user-attachments/assets/b4e45f40-5420-4811-8500-4a0c3b4d1e69" />
 
 ## 対応バージョン(v1.0.0現在)
 - ゲームバージョン1.0.1のみ対応  
