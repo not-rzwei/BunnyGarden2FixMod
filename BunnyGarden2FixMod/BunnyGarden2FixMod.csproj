@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>net.noeleve.BunnyGarden2FixMod</AssemblyName>
     <Product>BunnyGardenFixMod</Product>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
     <RestoreAdditionalProjectSources>
@@ -19,6 +19,7 @@
     <None Remove="Assembly\Assembly-CSharp.dll" />
     <None Remove="Assembly\UniTask.dll" />
     <None Remove="Assembly\Unity.InputSystem.dll" />
+    <None Remove="Assembly\Unity.RenderPipelines.Universal.Runtime.dll" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +36,9 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>Assembly\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime">
+      <HintPath>Assembly\Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>
