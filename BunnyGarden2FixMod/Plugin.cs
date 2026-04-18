@@ -34,6 +34,8 @@ public class Plugin : BaseUnityPlugin
     public static ConfigEntry<float> ConfigSpeed;
     public static ConfigEntry<float> ConfigFastSpeed;
     public static ConfigEntry<float> ConfigSlowSpeed;
+    public static ConfigEntry<bool> ConfigCheatEnabled;
+    public static ConfigEntry<bool> ConfigDisableStockings;
 
     private GameObject freeCamObject;
     private Camera freeCam;
@@ -94,10 +96,32 @@ public class Plugin : BaseUnityPlugin
             2.5f,
             "フリーカメラの低速移動速度（Ctrl）");
 
+        ConfigDisableStockings = Config.Bind(
+            "Appearance",
+            "DisableStockings",
+            false,
+            "true にするとキャストのストッキングを非表示にします。\n" +
+            "ApplyStocking の type 引数を強制的に 0（なし）に置き換えます。");
+
+        ConfigCheatEnabled = Config.Bind(
+            "Cheat",
+            "Enabled",
+            false,
+            "true にすると会話選択肢・ドリンク・フードの正解をゲーム内に表示します。\n" +
+            "【会話選択肢】選択肢テキストの先頭に記号が追加されます。\n" +
+            "  ★ : 好感度UP（正解）\n" +
+            "  ▼ : 好感度DOWN（酔い選択肢だが現在の状況では効果なし）\n" +
+            "【ドリンク・フード】アイテムの背景色が変化します。\n" +
+            "  緑 : キャストのお気に入り（AddFavoriteLikability > 0）\n" +
+            "  黄 : 今日の旬アイテム（ボーナスあり）\n" +
+            "  赤 : キャストが嫌いなもの（AddFavoriteLikability < 0）");
+
         Logger = base.Logger;
         PatchLogger.Initialize(Logger);
         var harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
         harmony.PatchAll();
+        // async ステートマシンは Harmony でパッチできないため LateUpdate 方式で補正
+        Patches.CameraZoomPatch.Initialize(gameObject);
         PatchLogger.LogInfo($"プラグイン起動: {MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION}");
         PatchLogger.LogInfo($"解像度パッチを適用しました: {Plugin.ConfigWidth.Value}x{Plugin.ConfigHeight.Value}");
         PatchLogger.LogInfo($"アンチエイリアシング設定: {Plugin.ConfigAntiAliasing.Value}");

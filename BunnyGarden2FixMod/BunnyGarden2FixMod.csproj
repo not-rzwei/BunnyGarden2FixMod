@@ -16,7 +16,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>net.noeleve.BunnyGarden2FixMod</AssemblyName>
     <Product>BunnyGarden2FixMod</Product>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
     <RestoreAdditionalProjectSources>
@@ -42,6 +42,8 @@
     <None Remove="Assembly\Assembly-CSharp.dll" />
     <None Remove="Assembly\Unity.InputSystem.dll" />
     <None Remove="Assembly\Unity.RenderPipelines.Universal.Runtime.dll" />
+    <None Remove="Assembly\Unity.TextMeshPro.dll" />
+    <None Remove="Assembly\UnityEngine.UI.dll" />
   </ItemGroup>
 
   <!-- BepInEx 5 用パッケージ -->
@@ -73,6 +75,12 @@
     </Reference>
     <Reference Include="Unity.InputSystem">
       <HintPath>Assembly\Unity.InputSystem.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>Assembly\Unity.TextMeshPro.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>Assembly\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>
