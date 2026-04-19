@@ -36,6 +36,7 @@ public class Plugin : BaseUnityPlugin
     public static ConfigEntry<float> ConfigSlowSpeed;
     public static ConfigEntry<bool> ConfigCheatEnabled;
     public static ConfigEntry<bool> ConfigDisableStockings;
+    public static ConfigEntry<bool> ConfigContinueVoiceOnTap;
 
     private GameObject freeCamObject;
     private Camera freeCam;
@@ -102,6 +103,13 @@ public class Plugin : BaseUnityPlugin
             false,
             "true にするとキャストのストッキングを非表示にします。\n" +
             "ApplyStocking の type 引数を強制的に 0（なし）に置き換えます。");
+
+        ConfigContinueVoiceOnTap = Config.Bind(
+            "Conversation",
+            "ContinueVoiceOnTap",
+            false,
+            "true にすると会話送り（タップ／オート／スキップ）時にボイスが途中停止せず、\n" +
+            "次の台詞のボイス再生で自然に上書きされるか、ボイスが最後まで再生されるようになります。");
 
         ConfigCheatEnabled = Config.Bind(
             "Cheat",
