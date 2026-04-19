@@ -42,7 +42,7 @@ public sealed class ChekiSlideshowBehaviour : MonoBehaviour
     // ══════════════════════════════════════════════════════════════════
 
     /// <summary>写真エリアの画面高さに対するサイズ比率</summary>
-    private const float ChekiPhotoSizeRatio = 0.33f;
+    private const float ChekiPhotoSizeRatio = 0.35f;
 
     /// <summary>写真エリアの最大サイズ上限（px）</summary>
     private const float ChekiPhotoSizeMax = 560000f;
@@ -57,7 +57,7 @@ public sealed class ChekiSlideshowBehaviour : MonoBehaviour
     private static readonly Color ChekiSheetColor = Color.white;
 
     /// <summary>チェキ中心の画面幅比率（0=左端 / 1=右端）</summary>
-    private const float ChekiCenterX = 0.17f;
+    private const float ChekiCenterX = 0.13f;
 
     /// <summary>X方向のランダム揺らぎ幅（px）</summary>
     private const float ChekiXJitter = 20f;
