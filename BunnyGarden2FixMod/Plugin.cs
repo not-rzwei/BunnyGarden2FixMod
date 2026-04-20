@@ -1,9 +1,11 @@
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+
 #if BIE6
 using BepInEx.Unity.Mono;
 #endif
+
 using BunnyGarden2FixMod.Controllers;
 using BunnyGarden2FixMod.Utils;
 using GB;
@@ -35,7 +37,12 @@ public class Plugin : BaseUnityPlugin
     public static ConfigEntry<float> ConfigFastSpeed;
     public static ConfigEntry<float> ConfigSlowSpeed;
     public static ConfigEntry<bool> ConfigCheatEnabled;
+    public static ConfigEntry<bool> ConfigUltimateSurvivorEnabled;
+    public static ConfigEntry<bool> ConfigGambleAlwaysWinEnabled;
     public static ConfigEntry<bool> ConfigDisableStockings;
+    public static ConfigEntry<bool> ConfigContinueVoiceOnTap;
+    public static ConfigEntry<bool> ConfigEndingChekiSlideshow;
+    public static ConfigEntry<bool> ConfigCastOrderEnabled;
 
     private GameObject freeCamObject;
     private Camera freeCam;
@@ -75,33 +82,64 @@ public class Plugin : BaseUnityPlugin
         ConfigSensitivity = Config.Bind(
             "Camera",
             "Sensitivity",
-            2f,
+            10f,
             "フリーカメラのマウス感度");
 
         ConfigSpeed = Config.Bind(
             "Camera",
             "Speed",
-            10f,
+            2.5f,
             "フリーカメラの移動速度");
 
         ConfigFastSpeed = Config.Bind(
             "Camera",
             "FastSpeed",
-            30f,
+            20f,
             "フリーカメラの高速移動速度（Shift）");
 
         ConfigSlowSpeed = Config.Bind(
             "Camera",
             "SlowSpeed",
-            2.5f,
+            0.5f,
             "フリーカメラの低速移動速度（Ctrl）");
 
         ConfigDisableStockings = Config.Bind(
             "Appearance",
             "DisableStockings",
             false,
-            "true にするとキャストのストッキングを非表示にします。\n" +
-            "ApplyStocking の type 引数を強制的に 0（なし）に置き換えます。");
+            "true にするとキャストのストッキングを非表示にします。");
+
+        ConfigContinueVoiceOnTap = Config.Bind(
+            "Conversation",
+            "ContinueVoiceOnTap",
+            false,
+            "true にすると会話送り（タップ／オート／スキップ）時にボイスが途中停止せず、\n" +
+            "次の台詞のボイス再生で自然に上書きされるか、ボイスが最後まで再生されるようになります。");
+
+        ConfigEndingChekiSlideshow = Config.Bind(
+            "Ending",
+            "ChekiSlideshow",
+            true,
+            "true にするとエンディング中に撮影済みのチェキをスライドショーで表示します。");
+
+        ConfigCastOrderEnabled = Config.Bind(
+            "CastOrder",
+            "Enabled",
+            false,
+            "true にするとバーに入る前にキャストの出勤順序を変更できます。\n" +
+            "F1 キーで編集モードを開始し、数字キー（1〜5）でキャストを選択・入れ替えます。");
+
+        ConfigUltimateSurvivorEnabled = Config.Bind(
+            "Cheat",
+            "UltimateSurvivor",
+            false,
+            "true にすると鉄骨渡りミニゲームで落下しなくなります。");
+
+        ConfigGambleAlwaysWinEnabled = Config.Bind(
+            "Cheat",
+            "GambleAlwaysWin",
+            false,
+            "true にするとギャンブルで負けなくなります。");
 
         ConfigCheatEnabled = Config.Bind(
             "Cheat",
@@ -118,10 +156,12 @@ public class Plugin : BaseUnityPlugin
 
         Logger = base.Logger;
         PatchLogger.Initialize(Logger);
+        StartCoroutine(UpdateChecker.Check());
         var harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
         harmony.PatchAll();
         // async ステートマシンは Harmony でパッチできないため LateUpdate 方式で補正
         Patches.CameraZoomPatch.Initialize(gameObject);
+        Patches.CastOrderPatch.Initialize(gameObject);
         PatchLogger.LogInfo($"プラグイン起動: {MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION}");
         PatchLogger.LogInfo($"解像度パッチを適用しました: {Plugin.ConfigWidth.Value}x{Plugin.ConfigHeight.Value}");
         PatchLogger.LogInfo($"アンチエイリアシング設定: {Plugin.ConfigAntiAliasing.Value}");
@@ -235,14 +275,14 @@ public class Plugin : BaseUnityPlugin
         if (srcData == null || dstData == null)
             return;
 
-        dstData.renderPostProcessing  = srcData.renderPostProcessing;
-        dstData.antialiasing          = srcData.antialiasing;
-        dstData.antialiasingQuality   = srcData.antialiasingQuality;
-        dstData.stopNaN               = srcData.stopNaN;
-        dstData.dithering             = srcData.dithering;
-        dstData.renderShadows         = srcData.renderShadows;
-        dstData.volumeLayerMask       = srcData.volumeLayerMask;
-        dstData.volumeTrigger         = srcData.volumeTrigger;
+        dstData.renderPostProcessing = srcData.renderPostProcessing;
+        dstData.antialiasing = srcData.antialiasing;
+        dstData.antialiasingQuality = srcData.antialiasingQuality;
+        dstData.stopNaN = srcData.stopNaN;
+        dstData.dithering = srcData.dithering;
+        dstData.renderShadows = srcData.renderShadows;
+        dstData.volumeLayerMask = srcData.volumeLayerMask;
+        dstData.volumeTrigger = srcData.volumeTrigger;
     }
 
     private void DestroyFreeCam()
