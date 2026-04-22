@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using BunnyGarden2FixMod.Utils;
 using GB;
 using GB.Scene;
@@ -26,6 +27,10 @@ public static class CostumeChangerPatch
     // シーン遷移時は activeSceneChanged で強制 null 化して次回 FindObjectOfType で取り直す。
     private static FittingRoom s_fittingRoomCache;
 
+    // FittingRoom.m_loading フィールドへの FieldInfo キャッシュ。
+    // Enter() → loadCharacter() が gameObject.SetActive(true) より前に Preload を呼ぶ期間を検出するために使う。
+    private static FieldInfo s_fittingRoomLoadingField;
+
     // 本体 CostumeOverride 尊重でスキップした際のログ dedup（スパム防止）。id 粒度で 1 回だけ出す。
     private static CharID s_lastRespectSkipId = CharID.NUM;
 
@@ -42,6 +47,8 @@ public static class CostumeChangerPatch
     public static void Initialize(GameObject parent)
     {
         if (!Plugin.ConfigCostumeChangerEnabled.Value) return;
+        // FittingRoom.m_loading の FieldInfo は型レベル情報なので起動時に1度取得すれば十分。
+        s_fittingRoomLoadingField = AccessTools.Field(typeof(FittingRoom), "m_loading");
         var pickerHost = new GameObject("BG2CostumePicker");
         Object.DontDestroyOnLoad(pickerHost);
         pickerHost.AddComponent<UI.CostumePickerController>();
@@ -153,11 +160,18 @@ public static class CostumeChangerPatch
     {
         if (s_fittingRoomCache == null)
         {
-            s_fittingRoomCache = Object.FindObjectOfType<FittingRoom>();
+            // includeInactive: true — Enter() が gameObject.SetActive(true) を呼ぶ前の
+            // ロード中フェーズでも FittingRoom インスタンスを検出するために必要。
+            s_fittingRoomCache = Object.FindObjectOfType<FittingRoom>(true);
         }
         // Unity の == null はシーン遷移で破棄された参照も null と判定する
         if (s_fittingRoomCache == null) return false;
-        return s_fittingRoomCache.gameObject.activeInHierarchy;
+        if (s_fittingRoomCache.gameObject.activeInHierarchy) return true;
+        // FittingRoom.Enter() は loadCharacter() 内で Preload を呼んだ後に
+        // gameObject.SetActive(true) するため、ロード中は activeInHierarchy が false のまま。
+        // m_loading == true はその「ロード中フェーズ」を示すので、FittingRoom 動作中とみなす。
+        return s_fittingRoomLoadingField != null
+            && (bool)(s_fittingRoomLoadingField.GetValue(s_fittingRoomCache) ?? false);
     }
 
     private static bool IsDLCInstalled(CostumeType costume)
@@ -184,5 +198,33 @@ public static class CostumeChangerPatch
         }
         s_dlcInstalledCache = set;
         return s_dlcInstalledCache;
+    }
+}
+
+/// <summary>
+/// FittingRoom 入室時（Enter 完了＝UI 表示直前）に CostumePicker を閉じ、
+/// 当該キャラの MOD override をクリアして FittingRoom 側の衣装選択を優先させるパッチ。
+/// setupGenreSelect は Enter() 末尾で必ず呼ばれる同期メソッドで、OnEnter フック相当として利用する。
+/// キャンセル操作でも同メソッドが呼ばれるが各処理は冪等なので問題なし。
+/// </summary>
+[HarmonyPatch(typeof(FittingRoom), "setupGenreSelect")]
+internal static class FittingRoomOnEnterPatch
+{
+    static bool Prepare() => Plugin.ConfigCostumeChangerEnabled?.Value ?? true;
+
+    private static FieldInfo s_charIDField;
+
+    static void Prefix(FittingRoom __instance)
+    {
+        UI.CostumePickerController.Instance?.HideIfShown();
+
+        if (s_charIDField == null)
+            s_charIDField = AccessTools.Field(typeof(FittingRoom), "m_charID");
+        if (s_charIDField == null) return;
+        var charId = (CharID)s_charIDField.GetValue(__instance);
+        if (charId >= CharID.NUM) return;
+        CostumeOverrideStore.Clear(charId);
+        PantiesOverrideStore.Clear(charId);
+        StockingOverrideStore.Clear(charId);
     }
 }

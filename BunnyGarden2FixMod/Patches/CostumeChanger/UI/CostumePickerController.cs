@@ -600,6 +600,12 @@ public class CostumePickerController : MonoBehaviour
         m_view.Render(BuildRenderData());
     }
 
+    internal void HideIfShown()
+    {
+        if (m_view == null || !m_view.IsShown) return;
+        m_view.Hide();
+    }
+
     private void HandleCloseClicked()
     {
         if (!m_view.IsShown) return;
