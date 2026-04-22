@@ -161,6 +161,9 @@ public class CostumePickerController : MonoBehaviour
         }
 
         if (!m_view.IsShown) return;
+
+        CheckCastChanged();  // カーソル位置に関係なくキャスト変化に追従する
+
         if (!IsCursorOverPicker) return;   // カーソルがパネル外の場合はキーボード操作を無視
 
         // タブ切替（A/D・←/→）
@@ -229,9 +232,19 @@ public class CostumePickerController : MonoBehaviour
 
     private void OpenFor(CharID charId)
     {
+        m_activeTab = CostumePickerView.WardrobeTab.Costume;
+        RebuildItemsFor(charId);
+        m_view.Show(BuildRenderData());
+        int cUnlock = m_costumeItems.Count(x => !x.Locked);
+        int pUnlock = m_pantiesItems.Count(x => !x.Locked);
+        int sUnlock = m_stockingItems.Count(x => !x.Locked);
+        PatchLogger.LogInfo($"[CostumePicker] オープン: {charId} / 衣装{cUnlock}/{m_costumeItems.Count} / パンツ{pUnlock}/{m_pantiesItems.Count} / ストッキング{sUnlock}/{m_stockingItems.Count}");
+    }
+
+    private void RebuildItemsFor(CharID charId)
+    {
         m_activeChar = charId;
 
-        // Costume items — 全 CostumeType を列挙。DLC 未インストールは除外、viewed でないものは Locked
         var costumeViewedSet = new HashSet<CostumeType>(CostumeViewHistory.GetViewedList(charId));
         var installedDlc = GetInstalledDlcCostumes();
         m_costumeItems = new List<(CostumeType, bool)>();
@@ -243,7 +256,6 @@ public class CostumePickerController : MonoBehaviour
             m_costumeItems.Add((c, locked));
         }
 
-        // Panties items — 全 (type, color) 組を列挙、viewed でないものは Locked
         var pantiesViewedSet = new HashSet<(int, int)>();
         foreach (var p in PantiesViewHistory.GetViewedList(charId)) pantiesViewedSet.Add((p.Type, p.Color));
         m_pantiesItems = new List<(int, int, bool)>();
@@ -256,7 +268,6 @@ public class CostumePickerController : MonoBehaviour
             }
         }
 
-        // Stocking items — 0..Max 全列挙、viewed でないものは Locked
         m_stockingItems = new List<(int, bool)>();
         for (int i = 0; i <= StockingOverrideStore.Max; i++)
         {
@@ -264,7 +275,6 @@ public class CostumePickerController : MonoBehaviour
             m_stockingItems.Add((i, locked));
         }
 
-        // Initial selection: override match → なければ最初の unlocked
         m_costumeSelected = FindOverrideOrFirstUnlocked(
             m_costumeItems,
             CostumeOverrideStore.TryGet(charId, out var ovCostume),
@@ -280,13 +290,30 @@ public class CostumePickerController : MonoBehaviour
             StockingOverrideStore.TryGet(charId, out var ovStk),
             x => x.Type == ovStk,
             x => x.Locked);
+    }
 
-        m_activeTab = CostumePickerView.WardrobeTab.Costume;
-        m_view.Show(BuildRenderData());
-        int cUnlock = m_costumeItems.Count(x => !x.Locked);
-        int pUnlock = m_pantiesItems.Count(x => !x.Locked);
-        int sUnlock = m_stockingItems.Count(x => !x.Locked);
-        PatchLogger.LogInfo($"[CostumePicker] オープン: {charId} / 衣装{cUnlock}/{m_costumeItems.Count} / パンツ{pUnlock}/{m_pantiesItems.Count} / ストッキング{sUnlock}/{m_stockingItems.Count}");
+    private void CheckCastChanged()
+    {
+        var sys = GBSystem.Instance;
+        if (sys == null || !sys.IsIngame) return;
+        var env = sys.GetActiveEnvScene();
+        if (env == null) return;
+        var gameData = sys.RefGameData();
+        if (gameData == null) return;
+
+        var id = gameData.GetCurrentCast();
+        if (id == m_activeChar) return;
+        if (env.FindCharacterIndex(id) < 0) return;
+        RefreshForCast(id);
+    }
+
+    private void RefreshForCast(CharID newId)
+    {
+        var oldId = m_activeChar;
+        // m_activeTab は意図的に引き継ぐ — キャスト切替時は現在タブを維持する。
+        RebuildItemsFor(newId);
+        m_view.Render(BuildRenderData());
+        PatchLogger.LogInfo($"[CostumePicker] キャスト切替: {oldId} → {newId}");
     }
 
     private static int FindOverrideOrFirstUnlocked<T>(
