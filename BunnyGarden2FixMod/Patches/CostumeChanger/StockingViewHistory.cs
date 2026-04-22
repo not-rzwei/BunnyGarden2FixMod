@@ -32,11 +32,25 @@ public static class StockingViewHistory
         return ReadBits(id) != 0;
     }
 
+    /// <summary>
+    /// dedup キャッシュをリセットする。<see cref="ExSaveStore"/> の
+    /// Reset / LoadFromPath で底データが入替わる際に呼び、次回 MarkViewed で
+    /// 再登録が走るようにする。
+    /// </summary>
+    public static void ResetDedup()
+    {
+        s_lastCharId = CharID.NUM;
+        s_lastStocking = -1;
+    }
+
+    /// <summary>
+    /// 指定キャラ × stocking を表示済みとして記録する。
+    /// スロット非依存の Common バケットに書くため <c>CurrentSaveSlot</c> 未確定でも記録する。
+    /// </summary>
     public static void MarkViewed(CharID id, int stocking)
     {
         if (id >= CharID.NUM) return;
         if (stocking < 0 || stocking >= 32) return;
-        if (ExSaveStore.CurrentSaveSlot < 0) return;
 
         if (s_lastCharId == id && s_lastStocking == stocking) return;
         s_lastCharId = id;

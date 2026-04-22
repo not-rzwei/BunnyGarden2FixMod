@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using BepInEx;
+using BunnyGarden2FixMod.Patches.CostumeChanger;
 using BunnyGarden2FixMod.Utils;
 using GB.Save;
 using GB.Save.Pc;
@@ -131,6 +132,9 @@ public static class ExSaveStore
         CurrentSession = new ExSaveSlotData();
         CurrentSaveSlot = -1;
         CurrentMainPath = null;
+        // 底データを入替えたので ViewHistory 側の dedup キャッシュも無効化する
+        // （次回 MarkViewed で新データに対して再登録が走るように）
+        InvalidateCommonCaches();
     }
 
     /// <summary>
@@ -191,6 +195,7 @@ public static class ExSaveStore
         {
             AllSlots = new ExSaveData();
             PatchLogger.LogInfo($"[ExSave] サイドカー無し、空データで開始: {path ?? "(null)"}");
+            InvalidateCommonCaches();
             return;
         }
         try
@@ -207,6 +212,19 @@ public static class ExSaveStore
             AllSlots = new ExSaveData();
             PatchLogger.LogWarning($"[ExSave] ロード失敗、空データで続行: {path} ({ex})");
         }
+        // ロード（成功/失敗問わず）で AllSlots が差替わったので dedup キャッシュ無効化。
+        InvalidateCommonCaches();
+    }
+
+    /// <summary>
+    /// Common バケットに書き込む <see cref="ExSaveSlotData"/> 派生データの dedup キャッシュを
+    /// 無効化する。<see cref="AllSlots"/> 入替タイミング（Reset / LoadFromPath）で呼ぶ。
+    /// </summary>
+    private static void InvalidateCommonCaches()
+    {
+        CostumeViewHistory.ResetDedup();
+        PantiesViewHistory.ResetDedup();
+        StockingViewHistory.ResetDedup();
     }
 
     public static async Task SaveToPathAsync(string mainSavePath)

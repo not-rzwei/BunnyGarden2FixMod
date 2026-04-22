@@ -32,33 +32,44 @@ public static class CostumeViewHistory
     }
 
     /// <summary>
-    /// 指定キャラで表示済みの衣装リストを CostumeType 昇順で返す。
-    /// 履歴無し・破損時は空リスト。
+    /// 指定キャラで表示済みの衣装を CostumeType 昇順の不変配列で返す。
+    /// 履歴無し・破損時は空配列。呼び出し側でのキャスト書換えを防ぐため配列で返す。
     /// </summary>
     public static IReadOnlyList<CostumeType> GetViewedList(CharID id)
     {
         if (id >= CharID.NUM) return Array.Empty<CostumeType>();
         uint bits = ReadBits(id);
+        if (bits == 0u) return Array.Empty<CostumeType>();
         var list = new List<CostumeType>();
         for (int i = 0; i < (int)CostumeType.Num; i++)
         {
             if ((bits & (1u << i)) != 0) list.Add((CostumeType)i);
         }
-        return list;
+        return list.ToArray();
+    }
+
+    /// <summary>
+    /// dedup キャッシュをリセットする。<see cref="ExSaveStore"/> の
+    /// Reset / LoadFromPath で底データが入替わる際に呼び、次回 MarkViewed で
+    /// 再登録が走るようにする。
+    /// </summary>
+    public static void ResetDedup()
+    {
+        s_lastCharId = CharID.NUM;
+        s_lastCostume = CostumeType.Num;
     }
 
     /// <summary>
     /// 指定キャラ × 衣装 を表示済みとして記録する。
-    /// <see cref="ExSaveStore.CurrentSaveSlot"/> が -1 の場合は no-op（セーブ不可状態では
-    /// 次の Save フックまで届かず消えてしまうため記録しない）。
-    /// 直前呼び出しと同一 (id, costume) なら no-op（dedup）。
-    /// 既にビットが立っていれば no-op。
+    /// 本履歴は <see cref="ExSaveStore.CommonData"/>（スロット非依存）に保存され、
+    /// <c>Saves.Save</c> フックでそのまま永続化されるため、
+    /// <c>CurrentSaveSlot</c> 未確定（タイトル直後・アルバム閲覧中等）でも記録する。
+    /// 直前呼び出しと同一 (id, costume) なら no-op（dedup）。既にビットが立っていれば no-op。
     /// </summary>
     public static void MarkViewed(CharID id, CostumeType costume)
     {
         if (id >= CharID.NUM) return;
         if (costume >= CostumeType.Num) return;
-        if (ExSaveStore.CurrentSaveSlot < 0) return;
 
         // dedup（連続 Preload 抑制）
         if (s_lastCharId == id && s_lastCostume == costume) return;

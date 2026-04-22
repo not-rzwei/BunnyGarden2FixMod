@@ -28,11 +28,12 @@ public static class PantiesViewHistory
         return (bits & (1UL << index)) != 0;
     }
 
-    /// <summary>表示済み (type, color) ペアを昇順で列挙する。</summary>
+    /// <summary>表示済み (type, color) ペアを昇順の不変配列で返す。</summary>
     public static IReadOnlyList<(int Type, int Color)> GetViewedList(CharID id)
     {
         if (id >= CharID.NUM) return Array.Empty<(int, int)>();
         ulong bits = ReadBits(id);
+        if (bits == 0UL) return Array.Empty<(int, int)>();
         var list = new List<(int, int)>();
         for (int t = 0; t < PantiesOverrideStore.TypeCount; t++)
         {
@@ -42,15 +43,29 @@ public static class PantiesViewHistory
                 if ((bits & (1UL << index)) != 0) list.Add((t, c));
             }
         }
-        return list;
+        return list.ToArray();
     }
 
+    /// <summary>
+    /// dedup キャッシュをリセットする。<see cref="ExSaveStore"/> の
+    /// Reset / LoadFromPath で底データが入替わる際に呼び、次回 MarkViewed で
+    /// 再登録が走るようにする。
+    /// </summary>
+    public static void ResetDedup()
+    {
+        s_lastCharId = CharID.NUM;
+        s_lastIndex = -1;
+    }
+
+    /// <summary>
+    /// 指定キャラ × (type, color) を表示済みとして記録する。
+    /// スロット非依存の Common バケットに書くため <c>CurrentSaveSlot</c> 未確定でも記録する。
+    /// </summary>
     public static void MarkViewed(CharID id, int type, int color)
     {
         if (id >= CharID.NUM) return;
         int index = ToIndex(type, color);
         if (index < 0) return;
-        if (ExSaveStore.CurrentSaveSlot < 0) return;
 
         if (s_lastCharId == id && s_lastIndex == index) return;
         s_lastCharId = id;
