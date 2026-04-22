@@ -84,7 +84,7 @@ public class CostumePickerView : MonoBehaviour
     public void Render(RenderData data)
     {
         if (m_panel == null) return;
-        m_headerText.text = $"WARDROBE — {data.CharId}";
+        m_headerText.text = $"衣装変更 — {data.CharId}";
         m_tabStrip.SetActive((int)data.ActiveTab);
 
         var (labels, locks, selected, current) = data.ActiveTab switch
@@ -163,7 +163,7 @@ public class CostumePickerView : MonoBehaviour
         m_root.Add(m_panel);
 
         // Header（固定高、flex 計算で縮まない）
-        m_headerText = UITFactory.CreateLabel("WARDROBE", 13, UITTheme.Text.Accent, m_font, TextAnchor.MiddleLeft);
+        m_headerText = UITFactory.CreateLabel("衣装変更", 13, UITTheme.Text.Accent, m_font, TextAnchor.MiddleLeft);
         m_headerText.style.height = 22;
         m_headerText.style.marginBottom = 6;
         m_headerText.style.flexShrink = 0;
@@ -201,7 +201,7 @@ public class CostumePickerView : MonoBehaviour
         footer.Add(key2);
 
         var note = UITFactory.CreateLabel(
-            "※ 行クリック or Enter で適用/解除",
+            "※ キーボード操作はカーソルがパネル上のときのみ有効",
             9, UITTheme.Text.Secondary, m_font, TextAnchor.UpperLeft);
         note.style.whiteSpace = WhiteSpace.Normal;
         footer.Add(note);

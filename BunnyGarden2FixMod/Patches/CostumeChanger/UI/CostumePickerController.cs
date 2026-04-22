@@ -43,6 +43,33 @@ public class CostumePickerController : MonoBehaviour
     /// <summary>現在のマウス座標が Wardrobe パネル矩形内かを外部（クリック抑制パッチ）から参照する。</summary>
     public bool IsCursorOverPicker => m_view != null && m_view.IsPointerOverPanel();
 
+    private static readonly HashSet<string> s_pickerActions = new HashSet<string>
+    {
+        "AButton",     // Enter → 適用
+        "UpButton",    // W/↑ → 選択移動
+        "DownButton",  // S/↓ → 選択移動
+        "LeftButton",  // A/← → タブ切替
+        "RightButton", // D/→ → タブ切替
+        "StartButton", // Esc → 閉じる（Tab も同アクション）
+        "XButton",     // R → リセット
+        "Auto",        // keyboard 'A' が LeftButton と Auto を同時発火するため
+    };
+
+    /// <summary>ゲーム側入力（GBInput）をパッチで抑制すべき状態かを返す。</summary>
+    public static bool ShouldSuppressGameInput()
+    {
+        if (Plugin.ConfigCostumeChangerEnabled?.Value != true) return false;
+        var ctrl = Instance;
+        return ctrl != null && ctrl.IsPickerShown && ctrl.IsCursorOverPicker;
+    }
+
+    /// <summary>指定アクションがピッカー使用キーに該当し、かつ抑制すべき状態かを返す。</summary>
+    public static bool ShouldSuppressGameInput(string actionName)
+    {
+        if (!ShouldSuppressGameInput()) return false;
+        return actionName != null && s_pickerActions.Contains(actionName);
+    }
+
     private void Awake()
     {
         // 二重生成ガード: Initialize が (プラグイン再ロード等で) 2 回呼ばれても
@@ -134,6 +161,7 @@ public class CostumePickerController : MonoBehaviour
         }
 
         if (!m_view.IsShown) return;
+        if (!IsCursorOverPicker) return;   // カーソルがパネル外の場合はキーボード操作を無視
 
         // タブ切替（A/D・←/→）
         if (kb[Key.A].wasPressedThisFrame || kb[Key.LeftArrow].wasPressedThisFrame)

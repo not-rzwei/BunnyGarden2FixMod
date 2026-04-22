@@ -405,13 +405,9 @@ public class SuppressClickOverWardrobePatch
 {
     private static bool Prefix(ref bool __result)
     {
-        var ctrl = Patches.CostumeChanger.UI.CostumePickerController.Instance;
-        if (ctrl != null && ctrl.IsPickerShown && ctrl.IsCursorOverPicker)
-        {
-            __result = false;
-            return false; // 元実装 (Mouse.current.leftButton.wasPressedThisFrame) をスキップ
-        }
-        return true;
+        if (!Patches.CostumeChanger.UI.CostumePickerController.ShouldSuppressGameInput()) return true;
+        __result = false;
+        return false; // 元実装 (Mouse.current.leftButton.wasPressedThisFrame) をスキップ
     }
 }
 
@@ -430,13 +426,41 @@ public class SuppressScrollOverWardrobePatch
 
     private static bool Prefix(ref float __result)
     {
-        var ctrl = Patches.CostumeChanger.UI.CostumePickerController.Instance;
-        if (ctrl != null && ctrl.IsPickerShown && ctrl.IsCursorOverPicker)
-        {
-            __result = 0f;
-            return false;
-        }
-        return true;
+        if (!Patches.CostumeChanger.UI.CostumePickerController.ShouldSuppressGameInput()) return true;
+        __result = 0f;
+        return false;
+    }
+}
+
+/// <summary>
+/// カーソルが Wardrobe パネル矩形内にある間、CostumePicker が使用する GBInput アクション
+/// （AButton/Up/Down/Left/Right/StartButton/XButton/Auto）の一発押しを false に差し替える。
+/// 対象アクションは CostumePickerController.s_pickerActions で管理。
+/// </summary>
+[HarmonyPatch(typeof(GBInput), "isTriggered")]
+public class SuppressKeyOverWardrobePatch
+{
+    private static bool Prefix(UnityEngine.InputSystem.InputAction button, ref bool __result)
+    {
+        if (!Patches.CostumeChanger.UI.CostumePickerController.ShouldSuppressGameInput(button?.name)) return true;
+        __result = false;
+        return false;
+    }
+}
+
+/// <summary>
+/// カーソルが Wardrobe パネル矩形内にある間は GBInput.isTriggeredR を false に差し替え、
+/// リピート入力がゲーム側に流れるのを防ぐ。
+/// isTriggeredR はボタン情報を持たないため全アクションを対象とする。
+/// </summary>
+[HarmonyPatch(typeof(GBInput), "isTriggeredR")]
+public class SuppressKeyRepeatOverWardrobePatch
+{
+    private static bool Prefix(ref bool __result)
+    {
+        if (!Patches.CostumeChanger.UI.CostumePickerController.ShouldSuppressGameInput()) return true;
+        __result = false;
+        return false;
     }
 }
 
