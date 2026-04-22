@@ -49,6 +49,14 @@ public static class ExSaveStore
     public static ExSaveSlotData CurrentSession { get; private set; } = new ExSaveSlotData();
 
     /// <summary>
+    /// スロットに紐づかない共通データ（衣装/パンツ/ストッキング閲覧履歴等）。
+    /// <see cref="AllSlots"/>.Common への直接参照なので、ここへの書き込みはそのまま次回
+    /// <c>Saves.Save</c> フックで永続化される。LoadFromPath / Reset で AllSlots が再代入されても
+    /// プロパティとして毎回解決するため追従する。
+    /// </summary>
+    public static ExSaveSlotData CommonData => AllSlots.Common;
+
+    /// <summary>
     /// 現在のロード/セーブ先スロット番号。
     /// -1 の場合は「セーブ不可」マーカー（新規ゲーム直後・アルバム閲覧中等）。
     /// <c>Saves.Save</c> Postfix wrap ではこの値が 0 以上のときのみ <see cref="CommitSession"/> を実行する。
