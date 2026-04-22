@@ -27,9 +27,9 @@ public static class CostumeChangerPatch
     // シーン遷移時は activeSceneChanged で強制 null 化して次回 FindObjectOfType で取り直す。
     private static FittingRoom s_fittingRoomCache;
 
-    // FittingRoom.m_loading フィールドへの FieldInfo キャッシュ。
-    // Enter() → loadCharacter() が gameObject.SetActive(true) より前に Preload を呼ぶ期間を検出するために使う。
-    private static FieldInfo s_fittingRoomLoadingField;
+    // FittingRoom リフレクションキャッシュ（型レベル情報。Initialize() で一括取得）。
+    private static FieldInfo s_fittingRoomLoadingField;  // m_loading: loadCharacter 中を検出
+    internal static FieldInfo s_fittingRoomCharIDField;  // m_charID: FittingRoomOnEnterPatch で参照
 
     // 本体 CostumeOverride 尊重でスキップした際のログ dedup（スパム防止）。id 粒度で 1 回だけ出す。
     private static CharID s_lastRespectSkipId = CharID.NUM;
@@ -47,8 +47,9 @@ public static class CostumeChangerPatch
     public static void Initialize(GameObject parent)
     {
         if (!Plugin.ConfigCostumeChangerEnabled.Value) return;
-        // FittingRoom.m_loading の FieldInfo は型レベル情報なので起動時に1度取得すれば十分。
+        // FittingRoom リフレクションキャッシュを起動時に一括取得。
         s_fittingRoomLoadingField = AccessTools.Field(typeof(FittingRoom), "m_loading");
+        s_fittingRoomCharIDField  = AccessTools.Field(typeof(FittingRoom), "m_charID");
         var pickerHost = new GameObject("BG2CostumePicker");
         Object.DontDestroyOnLoad(pickerHost);
         pickerHost.AddComponent<UI.CostumePickerController>();
@@ -202,26 +203,32 @@ public static class CostumeChangerPatch
 }
 
 /// <summary>
-/// FittingRoom 入室時（Enter 完了＝UI 表示直前）に CostumePicker を閉じ、
-/// 当該キャラの MOD override をクリアして FittingRoom 側の衣装選択を優先させるパッチ。
-/// setupGenreSelect は Enter() 末尾で必ず呼ばれる同期メソッドで、OnEnter フック相当として利用する。
-/// キャンセル操作でも同メソッドが呼ばれるが各処理は冪等なので問題なし。
+/// FittingRoom 入室確定時（Enter 完了＝gameObject.SetActive(true) 直後）に
+/// CostumePicker を閉じ、当該キャラの MOD override をクリアするパッチ。
+/// setupGenreSelect は Enter() 末尾の同期メソッドで OnEnter フック相当として利用する。
+///
+/// 注意: setupGenreSelect は onXxxSelectCanceled() からも呼ばれるため、
+/// 衣装/パンツ/ストッキング選択中のキャンセルでも override クリアが走る副作用がある。
+/// ただしキャンセル時は activeInHierarchy == true でガードが通るため、
+/// 意図しないタイミング（Enter 前）での誤クリアは発生しない。
 /// </summary>
 [HarmonyPatch(typeof(FittingRoom), "setupGenreSelect")]
 internal static class FittingRoomOnEnterPatch
 {
     static bool Prepare() => Plugin.ConfigCostumeChangerEnabled?.Value ?? true;
 
-    private static FieldInfo s_charIDField;
-
     static void Prefix(FittingRoom __instance)
     {
+        // activeInHierarchy == false はロード中フェーズ（Enter の途中）なのでスキップ。
+        // Enter() は loadCharacter() の後に SetActive(true) → setupGenreSelect(0) を呼ぶため、
+        // 入室確定時は必ず active になっている。
+        if (!__instance.gameObject.activeInHierarchy) return;
+
         UI.CostumePickerController.Instance?.HideIfShown();
 
-        if (s_charIDField == null)
-            s_charIDField = AccessTools.Field(typeof(FittingRoom), "m_charID");
-        if (s_charIDField == null) return;
-        var charId = (CharID)s_charIDField.GetValue(__instance);
+        var field = CostumeChangerPatch.s_fittingRoomCharIDField;
+        if (field == null) return;
+        var charId = (CharID)field.GetValue(__instance);
         if (charId >= CharID.NUM) return;
         CostumeOverrideStore.Clear(charId);
         PantiesOverrideStore.Clear(charId);
