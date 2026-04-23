@@ -39,6 +39,9 @@ public class Plugin : BaseUnityPlugin
 {
     public static ConfigEntry<int> ConfigWidth;
     public static ConfigEntry<int> ConfigHeight;
+    public static ConfigEntry<int> ConfigExtraWidth;
+    public static ConfigEntry<int> ConfigExtraHeight;
+    public static ConfigEntry<bool> ConfigExtraActive;
     public static ConfigEntry<int> ConfigFrameRate;
     public static ConfigEntry<AntiAliasingType> ConfigAntiAliasing;
     public static ConfigEntry<float> ConfigSensitivity;
@@ -82,6 +85,28 @@ public class Plugin : BaseUnityPlugin
             "Height",
             1080,
             "解像度の高さ（縦）を指定します");
+
+        ConfigExtraWidth = Config.Bind(
+            "Resolution",
+            "ExtraWidth",
+            2560,
+            "ゲーム内 OptionMenu の DISPLAY 項目に追加される拡張解像度（ウィンドウモード）の幅。\n" +
+            "既定 2560（WQHD）。16:9 を推奨。");
+
+        ConfigExtraHeight = Config.Bind(
+            "Resolution",
+            "ExtraHeight",
+            1440,
+            "ゲーム内 OptionMenu の DISPLAY 項目に追加される拡張解像度（ウィンドウモード）の高さ。\n" +
+            "既定 1440（WQHD）。16:9 を推奨。");
+
+        ConfigExtraActive = Config.Bind(
+            "Internal",
+            "ExtraActive",
+            false,
+            "【内部状態】ユーザーが OptionMenu で拡張解像度 (ExtraWidth×ExtraHeight) を\n" +
+            "選択中かどうかを記録します。ゲーム内オプション操作時に自動更新されます。\n" +
+            "手動変更しないでください。");
 
         ConfigFrameRate = Config.Bind(
             "Resolution",
