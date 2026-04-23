@@ -333,7 +333,7 @@ public class CostumePickerView : MonoBehaviour
         footer.Add(note);
 
         var note2 = UITFactory.CreateLabel(
-            "※ 一度接客したキャラのみ衣装変更可能",
+            "※ プラグイン有効後に、一度でも着用した衣装に切り替え可能",
             9, UITTheme.Text.Secondary, m_font, TextAnchor.UpperLeft);
         note2.style.whiteSpace = WhiteSpace.Normal;
         footer.Add(note2);
