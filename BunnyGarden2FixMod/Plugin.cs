@@ -48,6 +48,7 @@ public class Plugin : BaseUnityPlugin
     public static ConfigEntry<float> ConfigSpeed;
     public static ConfigEntry<float> ConfigFastSpeed;
     public static ConfigEntry<float> ConfigSlowSpeed;
+    public static ConfigEntry<bool> ConfigMoreTalkReactions;
     public static ConfigEntry<bool> ConfigCheatEnabled;
     public static ConfigEntry<bool> ConfigUltimateSurvivorEnabled;
     public static ConfigEntry<bool> ConfigGambleAlwaysWinEnabled;
@@ -143,6 +144,12 @@ public class Plugin : BaseUnityPlugin
             "SlowSpeed",
             0.5f,
             "フリーカメラの低速移動速度（Ctrl）");
+
+        ConfigMoreTalkReactions = Config.Bind(
+            "Animation",
+            "MoreTalkReactions",
+            false,
+            "true にすると、バーの背景キャスト2人の会話リアクションモーションがより多様になります。");
 
         ConfigDisableStockings = Config.Bind(
             "Appearance",
