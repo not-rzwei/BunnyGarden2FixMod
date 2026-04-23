@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using BunnyGarden2FixMod.Utils;
+using Cysharp.Threading.Tasks;
 using GB;
 using GB.Game;
 using GB.Scene;
@@ -40,11 +42,18 @@ public class KneeSocksLoader : MonoBehaviour
         public bool SocksActive;
         public float SkinStockingBlend;
         public float SkinKneehighBlend;
+        public Mesh OriginalStockingsMesh;
+        public Transform[] OriginalStockingsBones;
     }
 
     private static readonly Dictionary<int, CharacterSnapshot> s_snapshots = new();
     private static CharacterHandle s_handle; // GC 防止: CharacterHandle が破棄されると SMR も破棄される
     private static SkinnedMeshRenderer s_kneeSocks;
+    // インデックスは KneeSocksStockingType(type)。[0]=null（デフォルトは s_kneeSocks.material 直接使用）
+    private static readonly Material[] s_stockingMaterials = new Material[3];
+
+    /// <summary>マテリアルプリロード中かどうかを返す。DisableStockingPatch などのガードに使用する。</summary>
+    public static bool IsPreloading { get; private set; }
 
     public static void Initialize(GameObject parent)
     {
@@ -74,6 +83,28 @@ public class KneeSocksLoader : MonoBehaviour
             PatchLogger.LogWarning($"[{nameof(KneeSocksLoader)}] mesh_kneehigh が見つかりませんでした。ニーソックスは使用できません。");
         else
             PatchLogger.LogInfo($"[{nameof(KneeSocksLoader)}] mesh_kneehigh をプリロードしました。");
+
+        // ダミーキャラの mesh_stockings に ApplyStocking を呼んでマテリアルをキャッシュする
+        var stockingsMesh = parent.GetComponentsInChildren<SkinnedMeshRenderer>(true)
+            .FirstOrDefault(m => m.name == "mesh_stockings");
+
+        if (stockingsMesh != null)
+        {
+            for (int t = 1; t <= 2; t++)
+            {
+                IsPreloading = true;
+                try
+                {
+                    yield return s_handle.ApplyStocking(t).ToCoroutine();
+                    s_stockingMaterials[t] = stockingsMesh.sharedMaterial;
+                    PatchLogger.LogInfo($"[KneeSocksLoader] ストッキングマテリアル type {t} をプリロードしました。");
+                }
+                finally
+                {
+                    IsPreloading = false; // 例外発生時も確実にリセット
+                }
+            }
+        }
     }
 
     private void OnDestroy()
@@ -91,7 +122,7 @@ public class KneeSocksLoader : MonoBehaviour
     /// <paramref name="character"/> の mesh_stockings に kneehigh メッシュを差し込む。
     /// setup/setupPantiesOnly Postfix および CostumePickerController の live 切替から呼ぶ。
     /// </summary>
-    public static void Apply(GameObject character)
+    public static void Apply(GameObject character, int overrideType = StockingOverrideStore.KneeSocks)
     {
         if (s_kneeSocks == null || s_kneeSocks.sharedMesh == null || character == null) return;
 
@@ -121,6 +152,8 @@ public class KneeSocksLoader : MonoBehaviour
                 SocksActive = socks?.gameObject.activeSelf ?? true,
                 SkinStockingBlend = lower != null ? GetBlendShapeWeight(lower, "blendShape_skin_lower.skin_stocking") : 0f,
                 SkinKneehighBlend = lower != null ? GetBlendShapeWeight(lower, "blendShape_skin_lower.skin_kneehigh") : 0f,
+                OriginalStockingsMesh = stockings.sharedMesh,
+                OriginalStockingsBones = stockings.bones,
             };
         }
 
@@ -145,7 +178,12 @@ public class KneeSocksLoader : MonoBehaviour
         if (missingBones > 0)
             PatchLogger.LogInfo($"[{nameof(KneeSocksLoader)}] ボーン未対応 {missingBones}/{mappedBones.Length}: {character.name}（フォールバックボーン使用）");
         stockings.sharedMesh = s_kneeSocks.sharedMesh;
-        stockings.material = s_kneeSocks.material;
+        int matIdx = StockingOverrideStore.KneeSocksStockingType(overrideType);
+        if (matIdx > 0 && s_stockingMaterials[matIdx] == null)
+            PatchLogger.LogWarning($"[{nameof(KneeSocksLoader)}] マテリアル index {matIdx} 未ロード（プリロード失敗？）。デフォルト素材で代替します。");
+        stockings.material = matIdx > 0 && s_stockingMaterials[matIdx] != null
+            ? s_stockingMaterials[matIdx]
+            : s_kneeSocks.material;
         stockings.bones = mappedBones;
 
         // blendshape 修正: stocking スロットを使うので skin_stocking=100, skin_kneehigh=0
@@ -163,10 +201,11 @@ public class KneeSocksLoader : MonoBehaviour
     /// </summary>
     public static void ApplyIfOverridden(CharacterHandle handle)
     {
+        if (IsPreloading) return; // プリロード中の dummy handle への誤適用を防ぐ
         if (handle?.Chara == null) return;
         var id = handle.GetCharID();
-        if (!StockingOverrideStore.TryGet(id, out var stk) || stk != StockingOverrideStore.KneeSocks) return;
-        Apply(handle.Chara);
+        if (!StockingOverrideStore.TryGet(id, out var stk) || !StockingOverrideStore.IsKneeSocksType(stk)) return;
+        Apply(handle.Chara, stk);
     }
 
     private static void SetBlendShape(SkinnedMeshRenderer renderer, string name, float weight)
@@ -206,6 +245,14 @@ public class KneeSocksLoader : MonoBehaviour
         {
             SetBlendShape(lower, "blendShape_skin_lower.skin_stocking", snap.SkinStockingBlend);
             SetBlendShape(lower, "blendShape_skin_lower.skin_kneehigh", snap.SkinKneehighBlend);
+        }
+
+        // ニーソックス適用で置き換えた mesh_stockings の sharedMesh/bones を元に戻す
+        var stockings = renderers.FirstOrDefault(m => m.name == "mesh_stockings");
+        if (stockings != null)
+        {
+            stockings.sharedMesh = snap.OriginalStockingsMesh;
+            stockings.bones = snap.OriginalStockingsBones;
         }
 
         PatchLogger.LogInfo($"[{nameof(KneeSocksLoader)}] ニーソックス副作用を復元しました: {character.name}");
@@ -263,8 +310,8 @@ internal static class KneeSocksApplyStockingPatch
     {
         if (__0 != 0 || __instance?.Chara == null) return true;
         var id = __instance.GetCharID();
-        if (!StockingOverrideStore.TryGet(id, out var stk) || stk != StockingOverrideStore.KneeSocks) return true;
-        KneeSocksLoader.Apply(__instance.Chara);
+        if (!StockingOverrideStore.TryGet(id, out var stk) || !StockingOverrideStore.IsKneeSocksType(stk)) return true;
+        KneeSocksLoader.Apply(__instance.Chara, stk);
         return false; // async 処理をスキップ
     }
 }

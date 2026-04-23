@@ -317,8 +317,8 @@ public class CostumePickerController : MonoBehaviour
         m_stockingItems = new List<(int, bool)>();
         for (int i = 0; i <= StockingOverrideStore.Max; i++)
         {
-            // KneeSocks はデフォルト解放済み（閲覧履歴に依存しない）
-            bool locked = i == StockingOverrideStore.KneeSocks
+            // KneeSocks 系（5–7）はデフォルト解放済み（閲覧履歴に依存しない）
+            bool locked = StockingOverrideStore.IsKneeSocksType(i)
                 ? false
                 : !StockingViewHistory.IsViewed(charId, i);
             m_stockingItems.Add((i, locked));
@@ -604,6 +604,8 @@ public class CostumePickerController : MonoBehaviour
         3 => "Black Fishnet",
         4 => "White Fishnet",
         5 => "瑠那のニーハイ",
+        6 => "黒ニーハイ",
+        7 => "白ニーハイ",
         _ => $"#{type}",
     };
 
@@ -682,7 +684,7 @@ public class CostumePickerController : MonoBehaviour
                 if (StockingOverrideStore.TryGet(m_activeChar, out var curStk) && curStk == stk)
                 {
                     StockingOverrideStore.Clear(m_activeChar);
-                    if (stk == StockingOverrideStore.KneeSocks)
+                    if (StockingOverrideStore.IsKneeSocksType(stk))
                     {
                         // KneeSocks 解除: Apply() の副作用（mesh_kneehigh/mesh_socks 非表示、blendShape）を復元
                         var env2 = GBSystem.Instance?.GetActiveEnvScene();
@@ -732,17 +734,21 @@ public class CostumePickerController : MonoBehaviour
         int type = m_stockingItems[m_stockingSelected].Type;
 
         bool wasKneeSocks = StockingOverrideStore.TryGet(m_activeChar, out var prevStk)
-                            && prevStk == StockingOverrideStore.KneeSocks;
+                            && StockingOverrideStore.IsKneeSocksType(prevStk);
         StockingOverrideStore.Set(m_activeChar, type);
 
         var env = GBSystem.Instance?.GetActiveEnvScene();
         if (env != null)
         {
-            if (type == StockingOverrideStore.KneeSocks)
+            if (StockingOverrideStore.IsKneeSocksType(type))
             {
-                // ニーソックス: 直接メッシュ差し替え（env.ApplyStockings は type 0–4 専用）
+                // ニーソックス系: 直接メッシュ差し替え（env.ApplyStockings は type 0–4 専用）
                 var charObj = env.FindCharacter(m_activeChar);
-                if (charObj != null) KneeSocksLoader.Apply(charObj);
+                if (charObj != null)
+                {
+                    if (wasKneeSocks) KneeSocksLoader.Restore(charObj);
+                    KneeSocksLoader.Apply(charObj, type);
+                }
             }
             else
             {
@@ -773,6 +779,14 @@ public class CostumePickerController : MonoBehaviour
         ReloadCurrentAsync(m_activeChar).Forget();
         PantiesOverrideStore.Clear(m_activeChar);
         RestoreDefaultPanties(m_activeChar);
+        // KneeSocks 系 override 中は Restore してから Clear
+        if (StockingOverrideStore.TryGet(m_activeChar, out var stkForReset)
+            && StockingOverrideStore.IsKneeSocksType(stkForReset))
+        {
+            var env = GBSystem.Instance?.GetActiveEnvScene();
+            var charObj = env?.FindCharacter(m_activeChar);
+            if (charObj != null) KneeSocksLoader.Restore(charObj);
+        }
         StockingOverrideStore.Clear(m_activeChar);
         RestoreDefaultStocking(m_activeChar);
         m_view.Render(BuildRenderData());
