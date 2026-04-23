@@ -65,10 +65,16 @@ internal static class WardrobeLivePatches
         {
             if (__instance == null) return;
             var id = __instance.GetCharID();
-            // 最新 LoadArg は current 絞り関係なく更新（SetCurrentCast 時の反映用）
-            WardrobeLastLoadArg.UpdateStocking(id, __0);
+            // KneeSocks override 中は __0 が 0 に注入済み。実際の override 値 (5) を記録する。
+            // __0 == 0 のみで判定することで、FittingRoom 等が独立して ApplyStocking(non-0) を
+            // 呼んだとき KneeSocks override が残っていても誤記録しないようにする。
+            int stockingToRecord = __0 == 0
+                && StockingOverrideStore.TryGet(id, out var ovStk)
+                && ovStk == StockingOverrideStore.KneeSocks
+                ? StockingOverrideStore.KneeSocks : __0;
+            WardrobeLastLoadArg.UpdateStocking(id, stockingToRecord);
             if (!WardrobeHistoryGate.ShouldRecord(id)) return;
-            StockingViewHistory.MarkViewed(id, __0);
+            StockingViewHistory.MarkViewed(id, stockingToRecord);
         }
     }
 }

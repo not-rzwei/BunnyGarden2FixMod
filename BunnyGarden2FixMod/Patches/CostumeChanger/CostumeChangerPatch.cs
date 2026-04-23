@@ -53,6 +53,7 @@ public static class CostumeChangerPatch
         var pickerHost = new GameObject("BG2CostumePicker");
         Object.DontDestroyOnLoad(pickerHost);
         pickerHost.AddComponent<UI.CostumePickerController>();
+        KneeSocksLoader.Initialize(pickerHost);
         // シーン遷移時に FittingRoom キャッシュを失効させる。
         // 破棄済み Unity Object も Unity の == null で true になるが、
         // DontDestroyOnLoad 下に移動された場合のフェイルセーフ。
@@ -128,7 +129,10 @@ public static class CostumeChangerPatch
         // Stocking override
         if (StockingOverrideStore.TryGet(id, out var stocking))
         {
-            arg.Stocking = stocking;
+            // KneeSocks (type 5) はゲーム本体が認識しない型。0 (no stocking) として注入し、
+            // ApplyStocking(0) でブレンドシェイプを初期化したうえで、
+            // KneeSocksSetupPatch Postfix でメッシュ差し替えを適用する。
+            arg.Stocking = stocking == StockingOverrideStore.KneeSocks ? 0 : stocking;
         }
     }
 
@@ -145,13 +149,19 @@ public static class CostumeChangerPatch
         var arg = __1;
         // 履歴対象か否かに関わらず、キャラ毎の「最後に Preload で適用された見た目」を記憶する。
         // 後で SetCurrentCast Postfix が新 current キャラの見た目を履歴へフラッシュするのに使う。
-        WardrobeLastLoadArg.Set(id, arg.Costume, arg.PantiesType, arg.PantiesColor, arg.Stocking);
+        // KneeSocks (type 5) override 中は arg.Stocking が 0 に変換済み。
+        // arg.Stocking == 0 のときのみ KneeSocks 判定する（FittingRoom 等の non-0 書き換えと区別）。
+        int stockingForHistory = arg.Stocking == 0
+            && StockingOverrideStore.TryGet(id, out var ovStk)
+            && ovStk == StockingOverrideStore.KneeSocks
+            ? StockingOverrideStore.KneeSocks : arg.Stocking;
+        WardrobeLastLoadArg.Set(id, arg.Costume, arg.PantiesType, arg.PantiesColor, stockingForHistory);
         // current キャラ以外は記録しない（Bar シーン等で横並びのキャラを Preload した
         // タイミングで履歴が勝手に埋まるのを防ぐ）。
         if (!WardrobeHistoryGate.ShouldRecord(id)) return;
         CostumeViewHistory.MarkViewed(id, arg.Costume);
         PantiesViewHistory.MarkViewed(id, arg.PantiesType, arg.PantiesColor);
-        StockingViewHistory.MarkViewed(id, arg.Stocking);
+        StockingViewHistory.MarkViewed(id, stockingForHistory);
     }
 
     /// <summary>FittingRoom が動作中かを外部から参照するための公開ヘルパ。</summary>

@@ -297,7 +297,10 @@ public class CostumePickerController : MonoBehaviour
         m_stockingItems = new List<(int, bool)>();
         for (int i = 0; i <= StockingOverrideStore.Max; i++)
         {
-            bool locked = !StockingViewHistory.IsViewed(charId, i);
+            // KneeSocks はデフォルト解放済み（閲覧履歴に依存しない）
+            bool locked = i == StockingOverrideStore.KneeSocks
+                ? false
+                : !StockingViewHistory.IsViewed(charId, i);
             m_stockingItems.Add((i, locked));
         }
 
@@ -482,6 +485,7 @@ public class CostumePickerController : MonoBehaviour
         2 => "White Pansto",
         3 => "Black Fishnet",
         4 => "White Fishnet",
+        5 => "ニーソックス",
         _ => $"#{type}",
     };
 
@@ -560,6 +564,14 @@ public class CostumePickerController : MonoBehaviour
                 if (StockingOverrideStore.TryGet(m_activeChar, out var curStk) && curStk == stk)
                 {
                     StockingOverrideStore.Clear(m_activeChar);
+                    if (stk == StockingOverrideStore.KneeSocks)
+                    {
+                        // KneeSocks 解除: Apply() の副作用（mesh_kneehigh/mesh_socks 非表示、blendShape）を復元
+                        var env2 = GBSystem.Instance?.GetActiveEnvScene();
+                        var charObj = env2?.FindCharacter(m_activeChar);
+                        if (charObj != null) KneeSocksLoader.Restore(charObj);
+                    }
+                    // env.ApplyStockings が mesh_stockings.sharedMesh を上書きする。
                     RestoreDefaultStocking(m_activeChar);
                     m_view.Render(BuildRenderData());
                     return;
@@ -600,18 +612,37 @@ public class CostumePickerController : MonoBehaviour
         if (m_stockingSelected < 0 || m_stockingSelected >= m_stockingItems.Count) return;
         if (m_stockingItems[m_stockingSelected].Locked) return;
         int type = m_stockingItems[m_stockingSelected].Type;
+
+        bool wasKneeSocks = StockingOverrideStore.TryGet(m_activeChar, out var prevStk)
+                            && prevStk == StockingOverrideStore.KneeSocks;
         StockingOverrideStore.Set(m_activeChar, type);
 
         var env = GBSystem.Instance?.GetActiveEnvScene();
         if (env != null)
         {
-            try
+            if (type == StockingOverrideStore.KneeSocks)
             {
-                env.ApplyStockings(m_activeChar, type);
+                // ニーソックス: 直接メッシュ差し替え（env.ApplyStockings は type 0–4 専用）
+                var charObj = env.FindCharacter(m_activeChar);
+                if (charObj != null) KneeSocksLoader.Apply(charObj);
             }
-            catch (Exception ex)
+            else
             {
-                PatchLogger.LogWarning($"[CostumePicker] ストッキング切替失敗: {ex}");
+                if (wasKneeSocks)
+                {
+                    // ニーソックスから別タイプへの切替: Apply() の副作用を先に復元
+                    var charObj = env.FindCharacter(m_activeChar);
+                    if (charObj != null) KneeSocksLoader.Restore(charObj);
+                }
+                // env.ApplyStockings が mesh_stockings.sharedMesh を上書きする。
+                try
+                {
+                    env.ApplyStockings(m_activeChar, type);
+                }
+                catch (Exception ex)
+                {
+                    PatchLogger.LogWarning($"[CostumePicker] ストッキング切替失敗: {ex}");
+                }
             }
         }
         m_view.Render(BuildRenderData());

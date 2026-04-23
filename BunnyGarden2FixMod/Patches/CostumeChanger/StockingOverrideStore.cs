@@ -12,7 +12,10 @@ public static class StockingOverrideStore
     private static readonly Dictionary<CharID, int> s_overrides = new();
 
     public const int Min = 0;
-    public const int Max = 4;
+    public const int Max = 5;
+
+    /// <summary>ゲーム本体のストッキングスロットに kneehigh メッシュを差し込む MOD 独自タイプ。</summary>
+    public const int KneeSocks = 5;
 
     public static void Set(CharID id, int stocking)
     {
