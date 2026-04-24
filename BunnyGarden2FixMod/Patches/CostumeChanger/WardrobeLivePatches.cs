@@ -27,7 +27,7 @@ internal static class WardrobeLivePatches
     [HarmonyPatch(typeof(CharacterHandle), nameof(CharacterHandle.ReloadPanties))]
     public static class ReloadPantiesRecordPatch
     {
-        static bool Prepare()
+        private static bool Prepare()
         {
             bool enabled = Plugin.ConfigCostumeChangerEnabled?.Value ?? true;
             if (enabled) PatchLogger.LogInfo("[WardrobeLivePatches.ReloadPanties] 適用");
@@ -35,7 +35,7 @@ internal static class WardrobeLivePatches
         }
 
         // CharacterHandle.ReloadPanties(int colorType, int pantiesType, Action onLoaded)
-        static void Postfix(CharacterHandle __instance, int __0, int __1)
+        private static void Postfix(CharacterHandle __instance, int __0, int __1)
         {
             if (__instance == null) return;
             var id = __instance.GetCharID();
@@ -50,7 +50,7 @@ internal static class WardrobeLivePatches
     [HarmonyPatch(typeof(CharacterHandle), nameof(CharacterHandle.ApplyStocking))]
     public static class ApplyStockingRecordPatch
     {
-        static bool Prepare()
+        private static bool Prepare()
         {
             bool enabled = Plugin.ConfigCostumeChangerEnabled?.Value ?? true;
             if (enabled) PatchLogger.LogInfo("[WardrobeLivePatches.ApplyStocking] 適用");
@@ -61,7 +61,7 @@ internal static class WardrobeLivePatches
         // Harmony は外側 stub に Postfix を掛けられ、引数は取得可能。
         // 既存 DisableStockingPatch が Prefix で __0 を書き換えるが、
         // Postfix はその書換え後の値を見る（記録は「画面に表示される値」の方が整合的）。
-        static void Postfix(CharacterHandle __instance, int __0)
+        private static void Postfix(CharacterHandle __instance, int __0)
         {
             if (__instance == null) return;
             if (KneeSocksLoader.IsPreloading) return; // マテリアルプリロード中は記録しない

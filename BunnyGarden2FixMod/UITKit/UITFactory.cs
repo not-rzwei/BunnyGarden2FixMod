@@ -87,7 +87,8 @@ public static class UITFactory
         return v;
     }
 
-    public enum CheckboxState { Default, Checked, Locked }
+    public enum CheckboxState
+    { Default, Checked, Locked }
 
     /// <summary>
     /// 行の左側に置く小さな角丸チェックボックス。
@@ -116,10 +117,12 @@ public static class UITFactory
                 mark.style.paddingBottom = 0;
                 box.Add(mark);
                 break;
+
             case CheckboxState.Locked:
                 box.style.backgroundColor = UITTheme.Checkbox.LockedFill;
                 SetBorderAll(box, UITTheme.Checkbox.LockedBorder, UITTheme.Checkbox.BorderWidth);
                 break;
+
             default: // Default
                 box.style.backgroundColor = UITTheme.Checkbox.DefaultFill;
                 SetBorderAll(box, UITTheme.Checkbox.DefaultBorder, UITTheme.Checkbox.BorderWidth);

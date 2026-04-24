@@ -1,7 +1,7 @@
-using System;
-using System.Collections.Generic;
 using BunnyGarden2FixMod.Utils;
 using GB.Game;
+using System;
+using System.Collections.Generic;
 using UITKit;
 using UITKit.Components;
 using UnityEngine;
@@ -16,7 +16,8 @@ namespace BunnyGarden2FixMod.Patches.CostumeChanger.UI;
 /// </summary>
 public class CostumePickerView : MonoBehaviour
 {
-    public enum WardrobeTab { Costume = 0, Panties = 1, Stocking = 2 }
+    public enum WardrobeTab
+    { Costume = 0, Panties = 1, Stocking = 2 }
 
     public class RenderData
     {
@@ -34,8 +35,10 @@ public class CostumePickerView : MonoBehaviour
         public int CostumeCurrent;
         public int PantiesCurrent;
         public int StockingCurrent;
+
         /// <summary>現在表示中（Preload 済み + activeInHierarchy）のキャスト一覧。</summary>
         public IReadOnlyList<CharID> VisibleCasts;
+
         /// <summary>VisibleCasts の中で現在ピッカーが対象としているキャストのインデックス。</summary>
         public int VisibleCastSelectedIndex;
     }
@@ -43,21 +46,31 @@ public class CostumePickerView : MonoBehaviour
     public class SettingsData
     {
         public CharID CharId;
+
         /// <summary>「すべて解放」ボタンを enable にするか（= そのキャラの GoodEnd クリア済み）。</summary>
         public bool UnlockAllEnabled;
+
         /// <summary>現在表示中のキャスト一覧（ヘッダーの ◀▶ ナビ更新に使用）。</summary>
         public IReadOnlyList<CharID> VisibleCasts;
+
         /// <summary>VisibleCasts の中で現在ピッカーが対象としているキャストのインデックス。</summary>
         public int VisibleCastSelectedIndex;
     }
 
     public event Action<int> OnTabClicked;
+
     public event Action<int> OnRowClicked;
+
     public event Action<int> OnCastClicked;
+
     public event Action OnCloseClicked;
+
     public event Action OnSettingsClicked;
+
     public event Action OnBackClicked;
+
     public event Action OnResetAllClicked;
+
     public event Action OnUnlockAllClicked;
 
     private UIDocument m_doc;
@@ -80,7 +93,10 @@ public class CostumePickerView : MonoBehaviour
     private Button m_resetAllButton;          // W/S キー選択ハイライトのため保持
     private Button m_unlockAllButton;         // enable/disable 切替のため保持
     private Label m_unlockAllNote;            // 常時表示の説明ラベル（将来ラベル差替え予定なら必要）
-    private enum ViewMode { Picker, Settings }
+
+    private enum ViewMode
+    { Picker, Settings }
+
     private ViewMode m_viewMode = ViewMode.Picker;
 
     public bool IsShown => m_panel != null && m_panel.style.display != DisplayStyle.None;

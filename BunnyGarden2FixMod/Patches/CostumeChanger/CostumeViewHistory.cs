@@ -1,8 +1,8 @@
-using System;
-using System.Collections.Generic;
 using BunnyGarden2FixMod.ExSave;
 using BunnyGarden2FixMod.Utils;
 using GB.Game;
+using System;
+using System.Collections.Generic;
 
 namespace BunnyGarden2FixMod.Patches.CostumeChanger;
 
@@ -20,6 +20,7 @@ public static class CostumeViewHistory
 
     // プロセス内 dedup キャッシュ。連続 Preload による冗長書込を抑える。
     private static CharID s_lastCharId = CharID.NUM;
+
     private static CostumeType s_lastCostume = CostumeType.Num;
 
     /// <summary>指定キャラ × 衣装 が一度以上表示済みか判定する。</summary>

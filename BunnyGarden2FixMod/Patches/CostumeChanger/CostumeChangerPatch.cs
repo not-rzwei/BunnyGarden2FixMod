@@ -1,13 +1,12 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using BunnyGarden2FixMod.Utils;
 using GB;
-using GB.Scene;
 using GB.DLC;
 using GB.Extra;
 using GB.Game;
+using GB.Scene;
 using HarmonyLib;
+using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -29,6 +28,7 @@ public static class CostumeChangerPatch
 
     // FittingRoom リフレクションキャッシュ（型レベル情報。Initialize() で一括取得）。
     private static FieldInfo s_fittingRoomLoadingField;  // m_loading: loadCharacter 中を検出
+
     internal static FieldInfo s_fittingRoomCharIDField;  // m_charID: FittingRoomOnEnterPatch で参照
 
     // 本体 CostumeOverride 尊重でスキップした際のログ dedup（スパム防止）。id 粒度で 1 回だけ出す。
@@ -49,7 +49,7 @@ public static class CostumeChangerPatch
         if (!Plugin.ConfigCostumeChangerEnabled.Value) return;
         // FittingRoom リフレクションキャッシュを起動時に一括取得。
         s_fittingRoomLoadingField = AccessTools.Field(typeof(FittingRoom), "m_loading");
-        s_fittingRoomCharIDField  = AccessTools.Field(typeof(FittingRoom), "m_charID");
+        s_fittingRoomCharIDField = AccessTools.Field(typeof(FittingRoom), "m_charID");
         var pickerHost = new GameObject("BG2CostumePicker");
         Object.DontDestroyOnLoad(pickerHost);
         pickerHost.AddComponent<UI.CostumePickerController>();
@@ -66,7 +66,7 @@ public static class CostumeChangerPatch
         s_fittingRoomCache = null;
     }
 
-    static bool Prepare()
+    private static bool Prepare()
     {
         // PatchLogger.LogInfo は内部で null-conditional ガード済みのため、
         // Initialize 未了でも安全に呼べる（最悪ログがドロップするだけ）。
@@ -79,7 +79,7 @@ public static class CostumeChangerPatch
     // シグネチャで引数名が揺れる可能性を避けるため __0 / __1 の序数束縛を使う。
     // Preload の引数順序は (CharID id, LoadArg arg) であることを Task 3 Step 2 で grep 確認する。
     // arg は参照型なので、arg.Costume の書換はそのまま呼出元の LoadArg に反映される。
-    static void Prefix(CharID __0, CharacterHandle.LoadArg __1)
+    private static void Prefix(CharID __0, CharacterHandle.LoadArg __1)
     {
         var id = __0;
         var arg = __1;
@@ -142,7 +142,7 @@ public static class CostumeChangerPatch
     // LoadCharacter 側の await IsPreloadDone 後に記録する必要があるが、Preload が
     // キャンセル・例外で完了失敗するケースは稀なので、本 MOD では要求確定時点を
     // 「表示した」とみなす（シンプルさ優先）。
-    static void Postfix(CharID __0, CharacterHandle.LoadArg __1)
+    private static void Postfix(CharID __0, CharacterHandle.LoadArg __1)
     {
         if (__1 == null) return;
         var id = __0;
@@ -225,9 +225,9 @@ public static class CostumeChangerPatch
 [HarmonyPatch(typeof(FittingRoom), "setupGenreSelect")]
 internal static class FittingRoomOnEnterPatch
 {
-    static bool Prepare() => Plugin.ConfigCostumeChangerEnabled?.Value ?? true;
+    private static bool Prepare() => Plugin.ConfigCostumeChangerEnabled?.Value ?? true;
 
-    static void Prefix(FittingRoom __instance)
+    private static void Prefix(FittingRoom __instance)
     {
         // activeInHierarchy == false はロード中フェーズ（Enter の途中）なのでスキップ。
         // Enter() は loadCharacter() の後に SetActive(true) → setupGenreSelect(0) を呼ぶため、

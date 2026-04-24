@@ -21,7 +21,7 @@ namespace BunnyGarden2FixMod.Patches;
 [HarmonyPatch(typeof(CharacterHandle), nameof(CharacterHandle.ApplyStocking))]
 public static class DisableStockingPatch
 {
-    static bool Prepare()
+    private static bool Prepare()
     {
         PatchLogger.LogInfo("[DisableStockingPatch] CharacterHandle.ApplyStocking をパッチしました（ストッキング無効化）");
         return true;

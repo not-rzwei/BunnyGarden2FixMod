@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using GB.Game;
+using System.Collections.Generic;
 
 namespace BunnyGarden2FixMod.Patches.CostumeChanger;
 
@@ -23,6 +23,7 @@ internal static class WardrobeLastLoadArg
             PantiesColor = pantiesColor;
             Stocking = stocking;
         }
+
         public CostumeType Costume { get; }
         public int PantiesType { get; }
         public int PantiesColor { get; }

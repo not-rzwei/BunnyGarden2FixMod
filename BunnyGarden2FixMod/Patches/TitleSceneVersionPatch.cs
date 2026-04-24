@@ -1,7 +1,7 @@
-using System;
 using BunnyGarden2FixMod.Utils;
 using GB.Scene;
 using HarmonyLib;
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -57,7 +57,7 @@ public static class TitleSceneVersionPatch
             var rt = go.AddComponent<RectTransform>();
             rt.anchorMin = verRt.anchorMin;
             rt.anchorMax = verRt.anchorMax;
-            rt.pivot     = verRt.pivot;
+            rt.pivot = verRt.pivot;
             rt.sizeDelta = verRt.sizeDelta;
 
             // 1 行分上にずらす（fontSize × 1.3 は TMP デフォルト行ピッチの目安）
@@ -66,11 +66,11 @@ public static class TitleSceneVersionPatch
 
             // TextMeshProUGUI をゲームバージョンと同スタイルで追加
             var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.font      = verText.font;
-            tmp.fontSize  = verText.fontSize;
-            tmp.color     = verText.color;
+            tmp.font = verText.font;
+            tmp.fontSize = verText.fontSize;
+            tmp.color = verText.color;
             tmp.alignment = verText.alignment;
-            tmp.text      = $"Mod v{MyPluginInfo.PLUGIN_VERSION}";
+            tmp.text = $"Mod v{MyPluginInfo.PLUGIN_VERSION}";
 
             PatchLogger.LogInfo($"[TitleVersion] MOD バージョンラベルを追加しました: Mod v{MyPluginInfo.PLUGIN_VERSION}");
         }

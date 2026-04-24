@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using GB.Game;
+using System.Collections.Generic;
 
 namespace BunnyGarden2FixMod.Patches.CostumeChanger;
 
@@ -16,8 +16,10 @@ public static class StockingOverrideStore
 
     /// <summary>ゲーム本体のストッキングスロットに kneehigh メッシュを差し込む MOD 独自タイプ。</summary>
     public const int KneeSocks = 5;
+
     /// <summary>kneehigh メッシュ + 黒ストッキングマテリアル。</summary>
     public const int KneeSocksBlack = 6;
+
     /// <summary>kneehigh メッシュ + 白ストッキングマテリアル。</summary>
     public const int KneeSocksWhite = 7;
 

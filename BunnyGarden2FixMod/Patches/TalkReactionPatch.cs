@@ -1,8 +1,8 @@
-using System.Linq;
 using BunnyGarden2FixMod.Utils;
 using GB;
 using GB.Scene;
 using HarmonyLib;
+using System.Linq;
 using UnityEngine;
 using VLB;
 using static GB.Scene.CharacterHandle;
@@ -12,7 +12,7 @@ namespace BunnyGarden2FixMod.Patches;
 [HarmonyPatch(typeof(CharacterHandle), nameof(CharacterHandle.updateTalkReactionMotion))]
 public static class TalkReactionPatch
 {
-    static bool Prepare()
+    private static bool Prepare()
     {
         PatchLogger.LogInfo(
             $"[{nameof(TalkReactionPatch)}] " +

@@ -1,13 +1,12 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using BunnyGarden2FixMod.Utils;
 using Cysharp.Threading.Tasks;
 using GB;
 using GB.Game;
 using GB.Scene;
 using HarmonyLib;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -49,6 +48,7 @@ public class KneeSocksLoader : MonoBehaviour
     private static readonly Dictionary<int, CharacterSnapshot> s_snapshots = new();
     private static CharacterHandle s_handle; // GC 防止: CharacterHandle が破棄されると SMR も破棄される
     private static SkinnedMeshRenderer s_kneeSocks;
+
     // インデックスは KneeSocksStockingType(type)。[0]=null（デフォルトは s_kneeSocks.material 直接使用）
     private static readonly Material[] s_stockingMaterials = new Material[3];
 
@@ -265,14 +265,14 @@ public class KneeSocksLoader : MonoBehaviour
 [HarmonyPatch(typeof(CharacterHandle), nameof(CharacterHandle.setup))]
 internal static class KneeSocksSetupPatch
 {
-    static bool Prepare()
+    private static bool Prepare()
     {
         bool enabled = Plugin.ConfigCostumeChangerEnabled?.Value ?? true;
         if (enabled) PatchLogger.LogInfo("[KneeSocksSetupPatch] 適用");
         return enabled;
     }
 
-    static void Postfix(CharacterHandle __instance) => KneeSocksLoader.ApplyIfOverridden(__instance);
+    private static void Postfix(CharacterHandle __instance) => KneeSocksLoader.ApplyIfOverridden(__instance);
 }
 
 /// <summary>
@@ -281,14 +281,14 @@ internal static class KneeSocksSetupPatch
 [HarmonyPatch(typeof(CharacterHandle), nameof(CharacterHandle.setupPantiesOnly))]
 internal static class KneeSocksSetupPantiesOnlyPatch
 {
-    static bool Prepare()
+    private static bool Prepare()
     {
         bool enabled = Plugin.ConfigCostumeChangerEnabled?.Value ?? true;
         if (enabled) PatchLogger.LogInfo("[KneeSocksSetupPantiesOnlyPatch] 適用");
         return enabled;
     }
 
-    static void Postfix(CharacterHandle __instance) => KneeSocksLoader.ApplyIfOverridden(__instance);
+    private static void Postfix(CharacterHandle __instance) => KneeSocksLoader.ApplyIfOverridden(__instance);
 }
 
 /// <summary>
@@ -299,14 +299,14 @@ internal static class KneeSocksSetupPantiesOnlyPatch
 [HarmonyPatch(typeof(CharacterHandle), nameof(CharacterHandle.ApplyStocking))]
 internal static class KneeSocksApplyStockingPatch
 {
-    static bool Prepare()
+    private static bool Prepare()
     {
         bool enabled = Plugin.ConfigCostumeChangerEnabled?.Value ?? true;
         if (enabled) PatchLogger.LogInfo("[KneeSocksApplyStockingPatch] 適用");
         return enabled;
     }
 
-    static bool Prefix(CharacterHandle __instance, int __0)
+    private static bool Prefix(CharacterHandle __instance, int __0)
     {
         if (__0 != 0 || __instance?.Chara == null) return true;
         var id = __instance.GetCharID();

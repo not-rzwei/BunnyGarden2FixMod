@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
 using BunnyGarden2FixMod.Utils;
 using GB;
 using GB.Game;
 using GB.Scene;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -31,6 +31,7 @@ public class CastOrderController : MonoBehaviour
 
     /// <summary>パッチからアクセスするための公開プロパティ。</summary>
     public bool AllLocked => m_allLocked;
+
     private int _cursor = -1;               // 現在選択中の行 (-1: 未選択)
     private DateTime? m_editDate = null;     // 編集開始時の日付
 
@@ -275,7 +276,7 @@ public class CastOrderController : MonoBehaviour
         }
 
         PatchLogger.LogInfo($"[CastOrder] 順序変更: {string.Join(", ", m_castOrder)}");
-        
+
         // UIを再レンダリング
         m_view.Render(BuildRenderData());
     }

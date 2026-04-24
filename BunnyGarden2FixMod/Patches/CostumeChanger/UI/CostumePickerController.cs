@@ -1,12 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using BunnyGarden2FixMod.Utils;
 using Cysharp.Threading.Tasks;
 using GB;
-using GB.DLC;
 using GB.Game;
-using GB.Scene;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -26,22 +24,27 @@ public class CostumePickerController : MonoBehaviour
 
     // 表示中キャスト管理
     private List<CharID> m_visibleCasts = new();
+
     private List<CharID> m_visibleCastsBuf = new();  // 毎フレーム比較用バッファ（GC 再利用）
     private bool m_followCurrentCast = true;          // true: currentCast 変化に自動追従
 
-    private enum PickerMode { Picker, Settings }
+    private enum PickerMode
+    { Picker, Settings }
+
     private PickerMode m_mode = PickerMode.Picker;
     private int m_settingsSelected = -1;  // -1: 未選択, 0: 初期化, 1: すべて解放
     private bool m_dialogPending;         // ConfirmDialog 呼出〜アクション完了までの多重実行防止
 
     // タブ状態
     private CostumePickerView.WardrobeTab m_activeTab = CostumePickerView.WardrobeTab.Costume;
+
     private int m_costumeSelected = -1;
     private int m_pantiesSelected = -1;
     private int m_stockingSelected = -1;
 
     // 各タブの選択肢（Locked=true は未開放。モック準拠で "???" 表示、選択・適用不可）
     private List<(CostumeType Costume, bool Locked)> m_costumeItems = new();
+
     private List<(int Type, int Color, bool Locked)> m_pantiesItems = new();
     private List<(int Type, bool Locked)> m_stockingItems = new();
 
@@ -138,11 +141,13 @@ public class CostumePickerController : MonoBehaviour
                 if (m_costumeItems[rowIndex].Locked) return;
                 m_costumeSelected = rowIndex;
                 break;
+
             case CostumePickerView.WardrobeTab.Panties:
                 if (rowIndex < 0 || rowIndex >= m_pantiesItems.Count) return;
                 if (m_pantiesItems[rowIndex].Locked) return;
                 m_pantiesSelected = rowIndex;
                 break;
+
             case CostumePickerView.WardrobeTab.Stocking:
                 if (rowIndex < 0 || rowIndex >= m_stockingItems.Count) return;
                 if (m_stockingItems[rowIndex].Locked) return;
@@ -629,10 +634,12 @@ public class CostumePickerController : MonoBehaviour
                 if (m_costumeItems.Count == 0) return;
                 m_costumeSelected = MoveToUnlocked(m_costumeItems, x => x.Locked, m_costumeSelected, delta);
                 break;
+
             case CostumePickerView.WardrobeTab.Panties:
                 if (m_pantiesItems.Count == 0) return;
                 m_pantiesSelected = MoveToUnlocked(m_pantiesItems, x => x.Locked, m_pantiesSelected, delta);
                 break;
+
             case CostumePickerView.WardrobeTab.Stocking:
                 if (m_stockingItems.Count == 0) return;
                 m_stockingSelected = MoveToUnlocked(m_stockingItems, x => x.Locked, m_stockingSelected, delta);
@@ -662,6 +669,7 @@ public class CostumePickerController : MonoBehaviour
                 ApplyCostumeOverrideAsync(m_activeChar, costume).Forget();
                 m_view.Render(BuildRenderData());
                 break;
+
             case CostumePickerView.WardrobeTab.Panties:
                 if (m_pantiesSelected < 0 || m_pantiesSelected >= m_pantiesItems.Count) return;
                 if (m_pantiesItems[m_pantiesSelected].Locked) return;
@@ -677,6 +685,7 @@ public class CostumePickerController : MonoBehaviour
                 }
                 ApplyPanties();
                 break;
+
             case CostumePickerView.WardrobeTab.Stocking:
                 if (m_stockingSelected < 0 || m_stockingSelected >= m_stockingItems.Count) return;
                 if (m_stockingItems[m_stockingSelected].Locked) return;

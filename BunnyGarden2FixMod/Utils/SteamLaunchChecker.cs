@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -20,6 +19,7 @@ internal static class SteamLaunchChecker
     /// 前回の再起動試行からこの秒数以内なら再試行をスキップする。
     /// </summary>
     private const int RelaunchGuardWindowSec = 30;
+
     private static readonly string RelaunchGuardFile =
         Path.Combine(Path.GetTempPath(), "bg2mod_steam_relaunch.tmp");
 
