@@ -394,7 +394,7 @@ public class Plugin : BaseUnityPlugin
         harmony.PatchAll();
         // async ステートマシンは Harmony でパッチできないため LateUpdate 方式で補正
         Patches.CameraZoomPatch.Initialize(gameObject);
-        Patches.CastOrderPatch.Initialize(gameObject);
+        Patches.CastOrderUI.CastOrderController.Initialize(gameObject);
         Patches.CostumeChanger.CostumeChangerPatch.Initialize(gameObject);
         PatchLogger.LogInfo($"プラグイン起動: {MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION}");
         PatchLogger.LogInfo($"解像度パッチを適用しました: {Plugin.ConfigWidth.Value}x{Plugin.ConfigHeight.Value}");
