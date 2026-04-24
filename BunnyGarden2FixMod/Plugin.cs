@@ -37,6 +37,7 @@ public enum ChekiImageFormat
 {
     /// <summary>PNG 無劣化圧縮。サイズ 1/5〜1/20・エンコード 50〜200ms/枚</summary>
     PNG,
+
     /// <summary>JPG 劣化圧縮。サイズ 1/20〜1/50・エンコード 30〜100ms/枚</summary>
     JPG,
 }
@@ -109,8 +110,10 @@ public class Plugin : BaseUnityPlugin
     private bool isCapturingScreenshot;
     private static float suppressGameInputUntilUnscaledTime = -1f;
     private const float ControllerShortcutSuppressDuration = 0.18f;
+
     private static readonly string ScreenshotDirectory = Path.Combine(Paths.BepInExRootPath, "screenshots",
         MyPluginInfo.PLUGIN_GUID);
+
     public static bool isFreeCamActive = false;
     public static bool isFixedFreeCam = false;
     public static bool isTimeStopped = false;
@@ -170,7 +173,7 @@ public class Plugin : BaseUnityPlugin
             "ChromaticAberration",
             "DisableChromaticAberration",
             false,
-            "true にするとクロマティックアバレーション（色収差）エフェクトを無効化します。");
+            "true にすると色収差エフェクト(画面の端のほうがにじんで見える効果)を無効化します。");
 
         ConfigSensitivity = Config.Bind(
             "Camera",
@@ -359,7 +362,7 @@ public class Plugin : BaseUnityPlugin
             "CostumeChanger",
             "RespectGameCostumeOverride",
             true,
-            "true のとき、ゲーム本体が CostumeOverride を ForceXxx に設定している間は MOD 側の override を一時停止します。");
+            "trueにすると、試着室などゲームが特定の衣装を強制するシーンではMOD側の衣装変更を一時的に停止します。これを有効にすることで、ゲーム内のイベントと衣装の競合を防げます");
 
         Logger = base.Logger;
         PatchLogger.Initialize(Logger);
@@ -1050,6 +1053,7 @@ public class FreeCamControllerShortcutInputSuppressionPatch
         return false;
     }
 }
+
 // 以前ここには CostumePickerInputDisablePatch があり、Wardrobe 表示中に
 // IsInputDisabled を強制 true にしていたが、GBInput.LeftClick (ADV のクリック判定)
 // も IsInputDisabled ゲートを通るため、Wardrobe 表示中は ADV が一切進まなくなっていた。
@@ -1084,7 +1088,7 @@ public class SuppressClickOverWardrobePatch
 [HarmonyPatch]
 public class SuppressScrollOverWardrobePatch
 {
-    static System.Reflection.MethodBase TargetMethod()
+    private static System.Reflection.MethodBase TargetMethod()
         => AccessTools.PropertyGetter(typeof(GBInput), nameof(GBInput.ScrollAxis));
 
     private static bool Prefix(ref float __result)
