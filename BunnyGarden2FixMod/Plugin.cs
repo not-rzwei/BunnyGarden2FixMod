@@ -175,7 +175,7 @@ public class Plugin : BaseUnityPlugin
             "アンチエイリアシングの種類を指定します。右の方ほど画質が良くなりますが、動作が重くなります。Off / FXAA / TAA / MSAA2x / MSAA4x / MSAA8x");
 
         ConfigDisableChromaticAberration = Config.Bind(
-            "ChromaticAberration",
+            "Graphics",
             "DisableChromaticAberration",
             false,
             "true にすると色収差エフェクト(画面の端のほうがにじんで見える効果)を無効化します。");
